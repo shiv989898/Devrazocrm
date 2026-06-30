@@ -1,0 +1,61 @@
+{
+  "name": "LeadOS - Send Gmail Outreach",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "outreach-send",
+        "options": {}
+      },
+      "id": "2d1b74c5-0955-4f40-b3b3-577ab5eef1d4",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "outreach-send"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.body.recipient_email }}",
+        "subject": "Quick Question from Devrazo",
+        "message": "={{ $json.body.content }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "e6a18d18-32a8-42f5-b220-410a0e9ec030",
+      "name": "Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        450,
+        300
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PLEASE_SELECT_YOUR_CREDENTIAL",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {}
+}

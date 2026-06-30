@@ -1,0 +1,192 @@
+{
+  "name": "LeadOS - Unified CRM Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "process-lead",
+        "options": {}
+      },
+      "id": "e4f8d3a1-7c9f-412e-a576-9c471c081e6b",
+      "name": "Webhook - Process Lead",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "process-lead"
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.body.action }}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "email"
+            },
+            {
+              "value2": "sheet",
+              "output": 1
+            }
+          ]
+        }
+      },
+      "id": "switch-node-id",
+      "name": "Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.body.recipient_email }}",
+        "subject": "Quick Question from Devrazo",
+        "message": "={{ $json.body.content }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "e6a18d18-32a8-42f5-b220-410a0e9ec030",
+      "name": "Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        700,
+        200
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PLEASE_SELECT_YOUR_CREDENTIAL",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "Name",
+              "value": "={{ $json.body.Name }}"
+            },
+            {
+              "name": "Category",
+              "value": "={{ $json.body.Category }}"
+            },
+            {
+              "name": "Phone",
+              "value": "={{ $json.body.Phone }}"
+            },
+            {
+              "name": "City",
+              "value": "={{ $json.body.City }}"
+            },
+            {
+              "name": "Date",
+              "value": "={{ $json.body.Date }}"
+            },
+            {
+              "name": "Time",
+              "value": "={{ $json.body.Time }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "format-node-id",
+      "name": "Format for Auto-Map",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        700,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "PLEASE_SELECT_OR_ENTER_YOUR_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData"
+        },
+        "options": {}
+      },
+      "id": "b3f5c8d1-4e78-4a9b-b983-f8a7d3c5f2b1",
+      "name": "Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        950,
+        400
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "PLEASE_SELECT_YOUR_CREDENTIAL",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook - Process Lead": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format for Auto-Map",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format for Auto-Map": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {}
+}

@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+sqlalchemy
+alembic
+pydantic
+pydantic-settings
+google-genai
+playwright
+beautifulsoup4
+requests
+python-multipart
+python-jose[cryptography]
+passlib[bcrypt]
+reportlab

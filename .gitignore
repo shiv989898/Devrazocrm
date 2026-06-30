@@ -1,0 +1,98 @@
+# ========================
+# Environment & Secrets
+# ========================
+.env
+.env.*
+!.env.example
+
+# ========================
+# Python
+# ========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+venv/
+.venv/
+env/
+*.whl
+
+# ========================
+# Node.js / Frontend
+# ========================
+node_modules/
+.next/
+out/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.tsbuildinfo
+
+# ========================
+# Database
+# ========================
+*.db
+*.sqlite
+*.sqlite3
+
+# ========================
+# IDE & Editor
+# ========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ========================
+# Docker
+# ========================
+docker-compose.override.yml
+
+# ========================
+# Debug & Temp Files
+# ========================
+*.log
+*.html
+!frontend/**/*.html
+!docs/**/*.html
+*.pem
+/coverage
+
+# ========================
+# OS Files
+# ========================
+.DS_Store
+Desktop.ini
+ehthumbs.db
+
+# ========================
+# Vercel
+# ========================
+.vercel
+
+# ========================
+# Alembic (keep migrations, ignore temp)
+# ========================
+backend/alembic/versions/__pycache__/
+
+# ========================
+# Gemini / AI agent
+# ========================
+.gemini/
+CLAUDE.md
+AGENTS.md

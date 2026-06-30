@@ -1,0 +1,122 @@
+{
+  "name": "LeadOS Outreach Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "outreach-send",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "leados-outreach-webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.platform }}",
+              "value2": "WhatsApp"
+            }
+          ]
+        }
+      },
+      "name": "IF Platform",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "sendTemplate",
+        "phoneNumberId": "",
+        "recipientPhoneNumber": "={{ $json.body.recipient_phone }}",
+        "template": "hello_world",
+        "language": "en_US",
+        "components": {
+          "component": [
+            {
+              "type": "body",
+              "parameters": {
+                "parameter": [
+                  {
+                    "type": "text",
+                    "text": "={{ $json.body.content }}"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "name": "WhatsApp Cloud API",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [
+        700,
+        200
+      ],
+      "notesInFlow": true,
+      "notes": "Replace with your WhatsApp Config"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.body.recipient_email }}",
+        "subject": "Hello from Devrazo",
+        "message": "={{ $json.body.content }}",
+        "options": {}
+      },
+      "name": "Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        700,
+        400
+      ],
+      "notesInFlow": true,
+      "notes": "Replace with your Gmail Config"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "IF Platform",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Platform": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp Cloud API",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {},
+  "active": true
+}
