@@ -86,20 +86,14 @@ def _scrape_google_maps_sync(category: str, location: str, max_results: int = 30
                 try:
                     el.scroll_into_view_if_needed()
                     
-                    old_h1 = page.query_selector('h1')
-                    old_h1_text = old_h1.inner_text() if old_h1 else ""
-                    
+                    current_url = page.url
                     el.click()
                     
-                    # Wait for the h1 (title) to change, guaranteeing the new detail pane is fully loaded
-                    safe_old_h1 = json.dumps(old_h1_text)
+                    # Wait for the URL to change (Google Maps always updates URL when a new place is clicked)
                     try:
-                        page.wait_for_function(f"""() => {{
-                            const h1 = document.querySelector('h1');
-                            return h1 && h1.innerText !== {safe_old_h1};
-                        }}""", timeout=4000)
-                        # Wait a tiny bit extra for the phone number DOM to settle
-                        page.wait_for_timeout(800)
+                        page.wait_for_function(f"() => window.location.href !== '{current_url}'", timeout=4000)
+                        # Wait an additional 1.5s to ensure the DOM (like the phone number button) is fully rendered
+                        page.wait_for_timeout(1500)
                     except Exception:
                         # If it takes longer than 4 seconds, it timed out. Skip this business to avoid stale or empty data.
                         print(f"Skipping {name} due to timeout.")
