@@ -5,8 +5,8 @@ import models, schemas
 def get_lead(db: Session, lead_id: int):
     return db.query(models.Lead).filter(models.Lead.id == lead_id).first()
 
-def get_leads(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Lead).offset(skip).limit(limit).all()
+def get_leads(db: Session, skip: int = 0, limit: int = 500):
+    return db.query(models.Lead).order_by(models.Lead.created_at.desc()).offset(skip).limit(limit).all()
 
 def create_lead(db: Session, lead: schemas.LeadCreate):
     db_lead = models.Lead(**lead.model_dump())

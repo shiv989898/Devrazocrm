@@ -4,7 +4,7 @@ import urllib.parse
 import re
 
 
-def _scrape_google_maps_sync(category: str, location: str, max_results: int = 30, exclude_names: list = None):
+def _scrape_google_maps_sync(category: str, location: str, max_results: int = 30, exclude_names: list = None, progress_callback=None):
     """Synchronous scraper using Playwright sync API.
     
     This avoids the NotImplementedError that occurs when using Playwright's
@@ -75,23 +75,32 @@ def _scrape_google_maps_sync(category: str, location: str, max_results: int = 30
                         break
             
             for index, el in enumerate(links):
+                if progress_callback:
+                    progress_callback(index, len(links), f"Extracting details {index + 1}/{len(links)}...")
                 # Extract Name directly from the link's aria-label
                 name_attr = el.get_attribute('aria-label')
                 name = name_attr if name_attr else "Unknown"
                 
                 # Click on the element to open its details
                 try:
+                    el.scroll_into_view_if_needed()
+                    current_url = page.url
                     el.click()
                     
-                    # Wait for URL to change or DOM to settle
-                    page.wait_for_timeout(2500)  # Increased buffer to ensure detail pane updates
+                    # Wait for URL to change (indicating the detail pane is loading)
+                    try:
+                        page.wait_for_function(f"() => window.location.href !== '{current_url}'", timeout=4000)
+                        # Wait an additional 1s for the DOM to fully render the new details
+                        page.wait_for_timeout(1000)
+                    except Exception:
+                        page.wait_for_timeout(3000)
                     
                     try:
                         page.wait_for_selector(
                             'button[data-item-id="address"], a[data-item-id="authority"], button[data-item-id^="phone:tel:"]',
                             timeout=3000
                         )
-                    except:
+                    except Exception:
                         pass
                     
                     # Website link
@@ -147,13 +156,13 @@ def _scrape_google_maps_sync(category: str, location: str, max_results: int = 30
     return results
 
 
-async def scrape_google_maps(category: str, location: str, max_results: int = 30, exclude_names: list = None):
+async def scrape_google_maps(category: str, location: str, max_results: int = 30, exclude_names: list = None, progress_callback=None):
     """Async wrapper that runs the sync scraper in a thread pool.
     
     This keeps the FastAPI endpoint non-blocking while avoiding
     the event loop subprocess issue on Windows.
     """
-    return await asyncio.to_thread(_scrape_google_maps_sync, category, location, max_results, exclude_names)
+    return await asyncio.to_thread(_scrape_google_maps_sync, category, location, max_results, exclude_names, progress_callback)
 
 
 if __name__ == "__main__":

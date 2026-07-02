@@ -41,20 +41,42 @@ class ScrapeRequest(BaseModel):
     category: str
     location: str
     platform: str = "google-maps"
+    job_id: str = None
+
+scrape_jobs = {}
+
+@app.get("/leads/scrape/status/{job_id}")
+def get_scrape_status(job_id: str):
+    return scrape_jobs.get(job_id, {"status": "not_found", "progress": 0, "total": 0, "message": "Job not found"})
 
 @app.post("/leads/scrape")
 async def run_scraper(req: ScrapeRequest, db: Session = Depends(get_db)):
+    if req.job_id:
+        scrape_jobs[req.job_id] = {"status": "running", "progress": 0, "total": 30, "message": "Initializing Google Maps Scraper..."}
+
+    def update_progress(count, total, msg):
+        if req.job_id:
+            scrape_jobs[req.job_id] = {"status": "running", "progress": count, "total": total, "message": msg}
+
     # 0. Get existing leads to prevent fetching duplicates
     existing_leads = db.query(models.Lead.name).all()
     exclude_names = [lead[0] for lead in existing_leads]
     
     # 1. Scrape Leads
-    raw_leads = await scrape_google_maps(req.category, req.location, max_results=30, exclude_names=exclude_names)
+    raw_leads = await scrape_google_maps(req.category, req.location, max_results=30, exclude_names=exclude_names, progress_callback=update_progress)
     
     # 2. Analyze Websites concurrently
+    update_progress(0, len(raw_leads), "Preparing to analyze websites...")
+    
+    analyzed_count = 0
+    total_to_analyze = len([r for r in raw_leads if r.get("website")])
     async def analyze_if_needed(raw):
+        nonlocal analyzed_count
         if raw.get("website"):
-            return await analyze_website(raw["website"])
+            res = await analyze_website(raw["website"])
+            analyzed_count += 1
+            update_progress(analyzed_count, total_to_analyze, f"Analyzing website {analyzed_count}/{total_to_analyze}...")
+            return res
         return None
         
     analysis_results = await asyncio.gather(*(analyze_if_needed(raw) for raw in raw_leads))
@@ -86,7 +108,12 @@ async def run_scraper(req: ScrapeRequest, db: Session = Depends(get_db)):
                 "problems": problems
             })
             
+    if batch_input:
+        update_progress(0, len(batch_input), f"Generating {len(batch_input)} outreach drafts...")
+        
     batch_drafts = await asyncio.to_thread(generate_outreach_drafts_batch, batch_input) if batch_input else {}
+    
+    update_progress(0, len(valid_leads), "Saving to database...")
     
     # 4. Save to Database sequentially (avoids SQLAlchemy thread issues)
     saved_leads = []
@@ -145,6 +172,9 @@ async def run_scraper(req: ScrapeRequest, db: Session = Depends(get_db)):
             
     db.commit()
             
+    if req.job_id:
+        scrape_jobs[req.job_id] = {"status": "completed", "progress": len(saved_leads), "total": len(saved_leads), "message": "Complete!"}
+
     return {"message": f"Successfully scraped {len(saved_leads)} leads", "count": len(saved_leads)}
 
 
@@ -155,7 +185,7 @@ def create_lead(lead: schemas.LeadCreate, db: Session = Depends(get_db)):
     return crud.create_lead(db=db, lead=lead)
 
 @app.get("/leads/", response_model=List[schemas.LeadResponse])
-def read_leads(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def read_leads(skip: int = 0, limit: int = 100000, db: Session = Depends(get_db)):
     return crud.get_leads(db, skip=skip, limit=limit)
 
 @app.get("/leads/{lead_id}", response_model=schemas.LeadResponse)

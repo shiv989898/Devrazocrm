@@ -50,8 +50,12 @@ export const leadApi = {
     const { data } = await api.post(`/outreaches/${id}/reject`);
     return data;
   },
-  scrapeLeads: async (category: string, location: string, platform: string) => {
-    const { data } = await api.post('/leads/scrape', { category, location, platform });
+  scrapeLeads: async (category: string, location: string, platform: string, job_id?: string) => {
+    const { data } = await api.post('/leads/scrape', { category, location, platform, job_id });
+    return data;
+  },
+  getScrapeStatus: async (job_id: string) => {
+    const { data } = await api.get(`/leads/scrape/status/${job_id}`);
     return data;
   }
 };
