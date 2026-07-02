@@ -101,8 +101,9 @@ def _scrape_google_maps_sync(category: str, location: str, max_results: int = 30
                         # Wait a tiny bit extra for the phone number DOM to settle
                         page.wait_for_timeout(800)
                     except Exception:
-                        # If it takes longer than 4 seconds, it timed out. Just proceed rather than hanging.
-                        pass
+                        # If it takes longer than 4 seconds, it timed out. Skip this business to avoid stale or empty data.
+                        print(f"Skipping {name} due to timeout.")
+                        continue
                     
                     try:
                         page.wait_for_selector(
@@ -124,6 +125,10 @@ def _scrape_google_maps_sync(category: str, location: str, max_results: int = 30
                     if phone_el:
                         phone_data = phone_el.get_attribute('data-item-id')
                         phone = phone_data.replace('phone:tel:', '') if phone_data else None
+                        
+                    # Strict requirement: if no phone number was found, skip this business entirely
+                    if not phone:
+                        continue
                         
                     # Address
                     address = None
