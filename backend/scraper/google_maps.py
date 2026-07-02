@@ -2,6 +2,7 @@ import asyncio
 from playwright.sync_api import sync_playwright
 import urllib.parse
 import re
+import json
 
 
 def _scrape_google_maps_sync(category: str, location: str, max_results: int = 30, exclude_names: list = None, progress_callback=None):
@@ -84,15 +85,23 @@ def _scrape_google_maps_sync(category: str, location: str, max_results: int = 30
                 # Click on the element to open its details
                 try:
                     el.scroll_into_view_if_needed()
-                    current_url = page.url
+                    
+                    old_h1 = page.query_selector('h1')
+                    old_h1_text = old_h1.inner_text() if old_h1 else ""
+                    
                     el.click()
                     
-                    # Wait for URL to change (indicating the detail pane is loading)
+                    # Wait for the h1 (title) to change, guaranteeing the new detail pane is fully loaded
+                    safe_old_h1 = json.dumps(old_h1_text)
                     try:
-                        page.wait_for_function(f"() => window.location.href !== '{current_url}'", timeout=4000)
-                        # Wait an additional 1s for the DOM to fully render the new details
-                        page.wait_for_timeout(1000)
+                        page.wait_for_function(f"""() => {{
+                            const h1 = document.querySelector('h1');
+                            return h1 && h1.innerText !== {safe_old_h1};
+                        }}""", timeout=6000)
+                        # Wait a tiny bit extra for the phone number DOM to settle
+                        page.wait_for_timeout(800)
                     except Exception:
+                        # Fallback if wait_for_function fails
                         page.wait_for_timeout(3000)
                     
                     try:

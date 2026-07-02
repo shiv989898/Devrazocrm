@@ -81,7 +81,7 @@ async def run_scraper(req: ScrapeRequest, db: Session = Depends(get_db)):
         
     analysis_results = await asyncio.gather(*(analyze_if_needed(raw) for raw in raw_leads))
     
-    # 2.5 Filter leads (Keep only if they have phone or email) and remove duplicates
+    # 2.5 Filter leads (Strictly require phone) and remove duplicates
     valid_leads = []
     for raw, analysis in zip(raw_leads, analysis_results):
         # Skip duplicates
@@ -91,7 +91,7 @@ async def run_scraper(req: ScrapeRequest, db: Session = Depends(get_db)):
             
         email = analysis.get("email") if analysis else None
         phone = raw.get("phone")
-        if email or phone:
+        if phone:
             valid_leads.append((raw, analysis, email, phone))
             
     # 3. Generate Drafts in Batch (Only for those with an email)
@@ -118,6 +118,10 @@ async def run_scraper(req: ScrapeRequest, db: Session = Depends(get_db)):
     # 4. Save to Database sequentially (avoids SQLAlchemy thread issues)
     saved_leads = []
     for raw, analysis, email, phone in valid_leads:
+        # Check if basic required fields are present. Strict rule: MUST have phone number.
+        if not phone:
+            continue
+            
         lead_data = schemas.LeadCreate(
             name=raw.get("name", "Unknown"),
             category=req.category,
