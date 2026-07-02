@@ -97,12 +97,12 @@ def _scrape_google_maps_sync(category: str, location: str, max_results: int = 30
                         page.wait_for_function(f"""() => {{
                             const h1 = document.querySelector('h1');
                             return h1 && h1.innerText !== {safe_old_h1};
-                        }}""", timeout=6000)
+                        }}""", timeout=4000)
                         # Wait a tiny bit extra for the phone number DOM to settle
                         page.wait_for_timeout(800)
                     except Exception:
-                        # Fallback if wait_for_function fails
-                        page.wait_for_timeout(3000)
+                        # If it takes longer than 4 seconds, it timed out. Just proceed rather than hanging.
+                        pass
                     
                     try:
                         page.wait_for_selector(
